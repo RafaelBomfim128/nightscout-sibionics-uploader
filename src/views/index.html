@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Status do Serviço</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #007bff;
+        }
+
+        .status-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            font-size: 16px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        pre {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            .status-item {
+                font-size: 14px;
+                padding: 8px;
+            }
+
+            .status-icon {
+                width: 20px;
+                height: 20px;
+            }
+
+            pre {
+                font-size: 12px;
+            }
+        }
+    </style>
+    <script>
+        async function updateStatus() {
+            const response = await fetch('/status');
+            const status = await response.json();
+            
+            document.getElementById("sibionicsLogin").src = status.sibionicsLogin ? "./img/check.png" : "./img/wrong.png";
+            document.getElementById("nightscoutLastEntry").src = status.nightscoutLastEntry ? "./img/check.png" : "./img/wrong.png";
+            document.getElementById("sibionicsDevice").src = status.sibionicsDevice ? "./img/check.png" : "./img/wrong.png";
+            document.getElementById("sibionicsGlucose").src = status.sibionicsGlucose ? "./img/check.png" : "./img/wrong.png";
+            document.getElementById("nightscoutUpload").src = status.nightscoutUpload ? "./img/check.png" : "./img/wrong.png";
+        }
+
+        async function updateLogs() {
+            const response = await fetch('/logs');
+            const logs = await response.text();
+            const logContainer = document.getElementById("log-container");
+            logContainer.textContent = logs;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        setInterval(() => {
+            updateStatus();
+            updateLogs();
+        }, 5000);
+        
+        window.onload = () => {
+            updateStatus();
+            updateLogs();
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Status do Serviço</h1>
+        <ul class="status-list">
+            <li class="status-item">Login no Sibionics <img id="sibionicsLogin" class="status-icon" src="./img/wrong.png"></li>
+            <li class="status-item">Busca da última entrada no Nightscout <img id="nightscoutLastEntry" class="status-icon" src="./img/wrong.png"></li>
+            <li class="status-item">Busca dos dispositivos do Sibionics <img id="sibionicsDevice" class="status-icon" src="./img/wrong.png"></li>
+            <li class="status-item">Busca da glicemia no Sibionics <img id="sibionicsGlucose" class="status-icon" src="./img/wrong.png"></li>
+            <li class="status-item">Upload no Nightscout <img id="nightscoutUpload" class="status-icon" src="./img/wrong.png"></li>
+        </ul>
+        <h2>Últimos Logs:</h2>
+        <pre id="log-container">Carregando logs...</pre>
+    </div>
+</body>
+</html>
