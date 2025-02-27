@@ -12,6 +12,18 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const status = require("./status");
 
+let lastRun = 0;
+const COOLDOWN = 30 * 1000;
+
+// Reduzir o uso de memória
+async function safeMain() {
+    if (Date.now() - lastRun < COOLDOWN) {
+        return;
+    }
+    lastRun = Date.now();
+    await main();
+}
+
 async function main() {
     try {
         const hasDevice = await sibionics.getDevice();
@@ -31,11 +43,19 @@ async function main() {
     }
 }
 
+// Forçar garbage collection a cada 10 minutos
+setInterval(() => {
+    if (global.gc) {
+        global.gc();
+        utils.logger("Forçando garbage collection.");
+    }
+}, 10 * 60 * 1000);
+
 async function initial() {
     config.readConfig();
     try {
         await sibionics.login();
-        await main();
+        await safeMain();
     } catch (error) {
         utils.logger("Erro no login:", error);
     }
@@ -48,16 +68,15 @@ initial().catch(error => {
 
 const schedule = "*/1 * * * *";
 utils.logger("Cron Schedule iniciado com sucesso");
-cron.schedule(schedule, () => {
-    main().catch(error => {
+cron.schedule(schedule, async () => {
+    try {
+        await safeMain();
+    } catch (error) {
         utils.logger("Ocorreu um erro genérico:", error);
-        process.exit(1);
-    });
-}, {});
+    }
+});
 
 app.use('/img', express.static(__dirname + '/img'));
-
-app.use(express.static(path.join(__dirname, "public")));
 
 //Página HTML de status
 app.get("/", (req, res) => {
@@ -65,9 +84,14 @@ app.get("/", (req, res) => {
 });
 
 app.get("/logs", (req, res) => {
-    const logs = fs.existsSync("logs.txt") ? fs.readFileSync("logs.txt", "utf-8") : "Sem logs no momento.";
-    res.setHeader("Content-Type", "text/plain");
-    res.send(logs);
+    const logPath = "logs.txt";
+    if (fs.existsSync(logPath)) {
+        res.setHeader("Content-Type", "text/plain");
+        const stream = fs.createReadStream(logPath, "utf-8");
+        stream.pipe(res);
+    } else {
+        res.send("Sem logs no momento.");
+    }
 });
 
 app.get("/status", (req, res) => {

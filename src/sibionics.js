@@ -71,7 +71,8 @@ module.exports = {
             status.updateStatus("sibionicsLogin", true);
             return true;
         } catch (error) {
-            utils.logger('Erro ao fazer login no Sibionics:', error);
+            utils.logger('Erro ao fazer login no Sibionics:');
+            utils.logger(error.message || error);
             status.updateStatus("sibionicsLogin", false);
             return false;
         }
@@ -131,7 +132,8 @@ module.exports = {
             status.updateStatus("sibionicsDevice", true);
             return true
         } catch (error) {
-            utils.logger('Erro ao buscar dispositivos:', error);
+            utils.logger('Erro ao buscar dispositivos:');
+            utils.logger(error.message || error);
             status.updateStatus("sibionicsDevice", false);
             return false
         }
@@ -212,7 +214,8 @@ module.exports = {
             status.updateStatus("sibionicsGlucose", true);
             return glucoseFormatted;
         } catch (error) {
-            utils.logger('Erro ao buscar dados de glicemia:', error);
+            utils.logger('Erro ao buscar dados de glicemia:');
+            utils.logger(error.message || error);
             status.updateStatus("sibionicsGlucose", false);
             return false
         }

@@ -8,11 +8,11 @@ const status = require('./status');
 const contentType = 'application/json';
 const userAgent = 'Nightscout Sibionics Uploader'
 
+const tokenHash = crypto.createHash('sha1').update(configEnvs.tokenNightscout).digest('hex');
+
 module.exports = {
     async getLastEntry() {
         try {
-            const tokenNightscout = configEnvs.tokenNightscout
-            const tokenHash = crypto.createHash('sha1').update(tokenNightscout).digest('hex');
             const url = new URL("/api/v1/entries?count=1", configEnvs.urlNightscout).toString();
             const response = await axios.get(url, {
                 headers: {
@@ -29,14 +29,15 @@ module.exports = {
                 return false;
             }
 
-            if (!response.data || response.data.length === 0) {
+            const lastEntry = response.data?.[0];
+            if (!lastEntry) {
                 utils.logger('Última entrada não encontrada no Nightscout');
                 status.updateStatus('nightscoutLastEntry', null);
                 return null;
             }
             
             status.updateStatus('nightscoutLastEntry', true);
-            return response.data.pop();
+            return lastEntry;
         } catch (error) {
             utils.logger('Erro genérico ao buscar a última entrada do Nightscout:', error);
             status.updateStatus('nightscoutLastEntry', false);
@@ -45,11 +46,8 @@ module.exports = {
     },
 
     async upload(dataForUpload) {
-        const tokenNightscout = configEnvs.tokenNightscout
-        const tokenHash = crypto.createHash('sha1').update(tokenNightscout).digest('hex');
-        const url = new URL("/api/v1/entries", configEnvs.urlNightscout).toString();
-
         try {
+            const url = new URL("/api/v1/entries", configEnvs.urlNightscout).toString();
             const response = await axios.post(url, dataForUpload, {
                 headers: {
                     "api-secret": tokenHash,
@@ -69,10 +67,14 @@ module.exports = {
             status.updateStatus('nightscoutUpload', true);
             return true;
         } catch (error) {
-            utils.logger('Erro genérico ao fazer upload dos dados no Nightscout')
-            utils.logger('Resposta obtida:', response.data);
+            utils.logger(`Erro ao fazer upload dos dados no Nightscout: ${error.message}`);
+            
+            if (error.response) {
+                utils.logger(`Resposta do servidor: ${JSON.stringify(error.response.data)}`);
+            }
+
             status.updateStatus('nightscoutUpload', false);
-            return false
+            return false;
         }
     }
 }
