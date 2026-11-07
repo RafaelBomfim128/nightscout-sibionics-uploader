@@ -1,19 +1,36 @@
-# See https://fly.io/docs/app-guides/continuous-deployment-with-github-actions/
 
 name: Fly Deploy
+
 on:
   push:
     branches:
       - main
       - master
+
 jobs:
   deploy:
     name: Deploy app
     runs-on: ubuntu-latest
-    concurrency: deploy-group    # optional: ensure only one action runs at a time
+    concurrency: deploy-group
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --remote-only
+
+      - name: Prepare Fly configuration
+        env:
+          FLY_APP_NAME: ${{ vars.FLY_APP_NAME }}
+        run: |
+          if [ -z "$FLY_APP_NAME" ]; then
+            echo "::error::Configure FLY_APP_NAME nas variáveis do GitHub."
+            exit 1
+          fi
+
+          cp fly.toml.example fly.toml
+
+      - name: Deploy
+        run: flyctl deploy --remote-only --app "$FLY_APP_NAME"
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          FLY_APP_NAME: ${{ vars.FLY_APP_NAME }}
