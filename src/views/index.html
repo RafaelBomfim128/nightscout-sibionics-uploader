@@ -1,133 +1,911 @@
+
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f7fc">
     <title>Status do Serviço</title>
+
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                Roboto, Arial, sans-serif;
             margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
+            min-width: 320px;
+            min-height: 100vh;
+            color: #1e293b;
+            background:
+                radial-gradient(circle at 10% 10%, #e6efff 0, transparent 30%),
+                radial-gradient(circle at 90% 90%, #eaf1ff 0, transparent 30%),
+                #f4f7fc;
         }
 
-        .container {
+        button {
+            font-family: inherit;
+        }
+
+        .page {
             width: 100%;
-            max-width: 800px;
-            padding: 20px;
-            background: white;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            text-align: center;
+            max-width: 1050px;
+            margin: 0 auto;
+            padding: 38px 22px;
         }
 
-        h1 {
-            color: #007bff;
-        }
+        /* Cabeçalho */
 
-        .status-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .status-item {
+        .header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 15px;
-            font-size: 16px;
-            border-bottom: 1px solid #ddd;
+            gap: 20px;
+            padding: 24px 28px;
+            margin-bottom: 24px;
+            background: #ffffff;
+            border: 1px solid #e8edf5;
+            border-radius: 16px;
+            box-shadow: 0 5px 20px rgba(32, 66, 120, 0.04);
         }
 
-        .status-item:last-child {
-            border-bottom: none;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .brand-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 52px;
+            height: 52px;
+            color: #1769e0;
+            background: #edf4ff;
+            border-radius: 15px;
+        }
+
+        .brand-icon svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #172b4d;
+            font-size: 23px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header-description {
+            margin: 5px 0 0;
+            color: #8490a3;
+            font-size: 13px;
+        }
+
+        .logout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-shrink: 0;
+            padding: 10px 16px;
+            color: #b83d48;
+            background: #fff3f3;
+            border: 1px solid #ffe1e1;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .logout:hover {
+            background: #ffe7e7;
+        }
+
+        .logout:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .logout svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Informações da atualização */
+
+        .monitor-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 27px;
+            padding: 0 5px;
+        }
+
+        .monitor-state {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: #16834b;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .state-dot {
+            width: 9px;
+            height: 9px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            background: #19a664;
+            box-shadow: 0 0 0 4px rgba(25, 166, 100, 0.12);
+        }
+
+        .monitor-state.is-warning {
+            color: #b7791f;
+        }
+
+        .monitor-state.is-warning .state-dot {
+            background: #d69e36;
+            box-shadow: 0 0 0 4px rgba(214, 158, 54, 0.12);
+        }
+
+        .monitor-time {
+            color: #8490a3;
+            font-size: 12px;
+        }
+
+        /* Títulos das seções */
+
+        .section-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .section-heading h2 {
+            margin: 0;
+            color: #26364d;
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .section-description {
+            color: #94a0b2;
+            font-size: 12px;
+        }
+
+        /* Cartões de status */
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 14px;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .status-card {
+            grid-column: span 2;
+            min-width: 0;
+            padding: 19px;
+            background: #ffffff;
+            border: 1px solid #e8edf5;
+            border-radius: 13px;
+            box-shadow: 0 3px 12px rgba(32, 66, 120, 0.035);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .status-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 18px rgba(32, 66, 120, 0.07);
+        }
+
+        .status-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 17px;
+        }
+
+        .card-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 37px;
+            height: 37px;
+            color: #3979d8;
+            background: #edf4ff;
+            border-radius: 10px;
+        }
+
+        .card-icon svg {
+            width: 19px;
+            height: 19px;
+        }
+
+        .status-card h3 {
+            margin: 0;
+            color: #27374e;
+            font-size: 14px;
+            font-weight: 650;
+            line-height: 1.4;
+        }
+
+        .card-description {
+            margin: 5px 0 0;
+            color: #96a1b1;
+            font-size: 12px;
+        }
+
+        .status-result {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 15px;
         }
 
         .status-icon {
-            width: 24px;
-            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            color: #ffffff;
+            background: #a0aaba;
+            font-size: 12px;
+            font-weight: 700;
         }
 
-        pre {
-            background: #272822;
-            color: #f8f8f2;
-            padding: 15px;
-            border-radius: 5px;
+        .status-icon.is-ok {
+            background: #21a568;
+        }
+
+        .status-icon.is-error {
+            background: #dc515b;
+        }
+
+        .status-icon.is-pending {
+            background: #94a3b8;
+        }
+
+        .status-icon.is-waiting {
+            color: #8a5a0a;
+            background: #f3c969;
+        }
+
+        .status-label {
+            color: #8490a3;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .status-detail {
+            color: #8490a3;
+            font-size: 11px;
+        }
+
+        .status-card.is-ok {
+            border-color: #e4f1e9;
+        }
+
+        .status-card.is-error {
+            border-color: #f4dddd;
+        }
+
+        .status-card.is-waiting {
+            border-color: #f2e3bf;
+        }
+
+        /* Área de logs */
+
+        .logs-section {
+            margin-top: 30px;
+        }
+
+        .logs-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 13px;
+        }
+
+        .logs-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .logs-title svg {
+            width: 19px;
+            height: 19px;
+            color: #537bb7;
+        }
+
+        .logs-heading h2 {
+            margin: 0;
+            color: #26364d;
+            font-size: 17px;
+        }
+
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #8490a3;
+            font-size: 12px;
+        }
+
+        .auto-refresh svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .logs-output {
+            min-height: 160px;
+            max-height: 360px;
+            overflow: auto;
+            padding: 19px;
+            margin: 0;
+            color: #d6e2f2;
+            background: #17212e;
+            border: 1px solid #253346;
+            border-radius: 12px;
+            font-family: "Consolas", "Cascadia Code", "Courier New", monospace;
+            font-size: 12px;
+            line-height: 1.75;
             text-align: left;
-            max-height: 300px;
-            overflow-y: auto;
-            font-size: 14px;
             white-space: pre-wrap;
-            word-wrap: break-word;
+            overflow-wrap: anywhere;
+            scrollbar-color: #52647a #17212e;
+            scrollbar-width: thin;
         }
 
-        @media (max-width: 600px) {
-            .container {
-                padding: 15px;
+        .logs-output.is-error {
+            color: #ffb4b4;
+        }
+
+        /* Rodapé */
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 20px 4px 0;
+            color: #a0aaba;
+            font-size: 11px;
+        }
+
+        /* Responsividade */
+
+        @media (max-width: 760px) {
+            .status-card {
+                grid-column: span 3;
             }
 
-            .status-item {
-                font-size: 14px;
-                padding: 8px;
+            .page {
+                padding: 24px 16px;
             }
 
-            .status-icon {
-                width: 20px;
-                height: 20px;
+            .header {
+                padding: 21px;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .page {
+                padding: 16px 12px 25px;
             }
 
-            pre {
+            .header {
+                padding: 18px;
+                border-radius: 13px;
+            }
+
+            .brand {
+                gap: 11px;
+            }
+
+            .brand-icon {
+                width: 44px;
+                height: 44px;
+                border-radius: 12px;
+            }
+
+            .brand-icon svg {
+                width: 23px;
+                height: 23px;
+            }
+
+            .header h1 {
+                font-size: 19px;
+            }
+
+            .header-description {
+                font-size: 11px;
+            }
+
+            .logout {
+                padding: 9px 11px;
                 font-size: 12px;
+            }
+
+            .logout svg {
+                display: none;
+            }
+
+            .status-card {
+                grid-column: span 6;
+                padding: 16px;
+            }
+
+            .status-card-top {
+                margin-bottom: 12px;
+            }
+
+            .status-result {
+                margin-top: 12px;
+            }
+
+            .monitor-bar {
+                margin-bottom: 23px;
+            }
+
+            .logs-output {
+                min-height: 130px;
+                max-height: 300px;
+                padding: 14px;
+                font-size: 11px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                transition: none !important;
             }
         }
     </style>
+</head>
+
+<body>
+    <main class="page">
+
+        <header class="header">
+            <div class="brand">
+                <div class="brand-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12h4l3-8 4 16 3-8h4"/>
+                    </svg>
+                </div>
+
+                <div>
+                    <h1>Status do Serviço</h1>
+                    <p class="header-description">
+                        Painel de monitoramento e diagnóstico
+                    </p>
+                </div>
+            </div>
+
+            <button class="logout" id="logout-button" type="button">
+                <svg viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 17l5-5-5-5"/>
+                    <path d="M15 12H3"/>
+                    <path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/>
+                </svg>
+                Sair
+            </button>
+        </header>
+
+        <section class="monitor-bar" aria-live="polite">
+            <div class="monitor-state" id="monitor-state">
+                <span class="state-dot"></span>
+                <span id="monitor-label">Conectando...</span>
+            </div>
+
+            <span class="monitor-time" id="last-update">
+                Aguardando primeira atualização
+            </span>
+        </section>
+
+        <section aria-labelledby="status-heading">
+            <div class="section-heading">
+                <h2 id="status-heading">Componentes do serviço</h2>
+                <span class="section-description">5 verificações</span>
+            </div>
+
+            <ul class="status-grid">
+
+                <li class="status-card" id="card-sibionicsLogin">
+                    <div class="status-card-top">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.8"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="5" width="18" height="14" rx="3"/>
+                                <path d="M7 10h10M7 14h5"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3>Login no Sibionics</h3>
+                    <p class="card-description">Autenticação na plataforma</p>
+                    <div class="status-result">
+                        <span id="sibionicsLogin" class="status-icon is-pending">…</span>
+                        <span id="sibionicsLoginLabel" class="status-label">Verificando</span>
+                    </div>
+                </li>
+
+                <li class="status-card" id="card-nightscoutLastEntry">
+                    <div class="status-card-top">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.8"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="9"/>
+                                <path d="M12 7v5l3 2"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3>Última entrada no Nightscout</h3>
+                    <p class="card-description">Consulta do registro mais recente</p>
+                    <div class="status-result">
+                        <span id="nightscoutLastEntry" class="status-icon is-pending">…</span>
+                        <span id="nightscoutLastEntryLabel" class="status-label">Verificando</span>
+                    </div>
+                </li>
+
+                <li class="status-card" id="card-sibionicsDevice">
+                    <div class="status-card-top">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.8"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="7" y="2" width="10" height="20" rx="2"/>
+                                <path d="M10 18h4"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3>Dispositivos Sibionics</h3>
+                    <p class="card-description">Consulta dos dispositivos vinculados</p>
+                    <div class="status-result">
+                        <span id="sibionicsDevice" class="status-icon is-pending">…</span>
+                        <span id="sibionicsDeviceLabel" class="status-label">Verificando</span>
+                    </div>
+                </li>
+
+                <li class="status-card" id="card-sibionicsGlucose">
+                    <div class="status-card-top">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.8"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 3s-7 7.2-7 12a7 7 0 0 0 14 0c0-4.8-7-12-7-12z"/>
+                                <path d="M9 15a3 3 0 0 0 3 3"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3>Glicemia Sibionics</h3>
+                    <p class="card-description">Consulta do valor de glicose</p>
+                    <div class="status-result">
+                        <span id="sibionicsGlucose" class="status-icon is-pending">…</span>
+                        <span id="sibionicsGlucoseLabel" class="status-label">Verificando</span>
+                    </div>
+                </li>
+
+                <li class="status-card" id="card-nightscoutUpload">
+                    <div class="status-card-top">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.8"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 16V3m-5 5 5-5 5 5"/>
+                                <path d="M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3>Upload no Nightscout</h3>
+                    <p class="card-description">Envio dos dados ao Nightscout</p>
+                    <div class="status-result">
+                        <span id="nightscoutUpload" class="status-icon is-pending">…</span>
+                        <div class="status-copy">
+                            <span id="nightscoutUploadLabel" class="status-label">Verificando</span>
+                            <span id="nightscoutLastUploadLabel" class="status-detail">Último envio: Nunca</span>
+                        </div>
+                    </div>
+                </li>
+
+            </ul>
+        </section>
+
+        <section class="logs-section" aria-labelledby="logs-heading">
+            <div class="logs-heading">
+                <div class="logs-title">
+                    <svg viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="3"/>
+                        <path d="m7 9 3 3-3 3m6 0h4"/>
+                    </svg>
+                    <h2 id="logs-heading">Últimos logs</h2>
+                </div>
+
+                <span class="auto-refresh">
+                    <svg viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 7v5h-5"/>
+                        <path d="M4 17v-5h5"/>
+                        <path d="M5.5 9a7 7 0 0 1 11.8-2L20 12"/>
+                        <path d="M4 12l2.7 5a7 7 0 0 0 11.8-2"/>
+                    </svg>
+                    Atualização automática · 5 segundos
+                </span>
+            </div>
+
+            <pre class="logs-output" id="log-container"
+                aria-label="Últimos registros do serviço"
+                aria-live="polite">Carregando logs...</pre>
+        </section>
+
+        <footer class="footer">
+            <span>Painel de monitoramento</span>
+            <span>Atualização automática habilitada</span>
+        </footer>
+
+    </main>
+
     <script>
+        const statusFields = [
+            "sibionicsLogin",
+            "nightscoutLastEntry",
+            "sibionicsDevice",
+            "sibionicsGlucose",
+            "nightscoutUpload"
+        ];
+
+        const monitorState = document.getElementById("monitor-state");
+        const monitorLabel = document.getElementById("monitor-label");
+        const lastUpdate = document.getElementById("last-update");
+        const logContainer = document.getElementById("log-container");
+        const logoutButton = document.getElementById("logout-button");
+
+        let refreshing = false;
+        function handleUnauthorized(response) {
+            if (response.status === 401) {
+                window.location.replace("/login");
+                return true;
+            }
+
+            return false;
+        }
+
+        function setIndicator(id, value) {
+            const indicator = document.getElementById(id);
+            const label = document.getElementById(id + "Label");
+            const card = document.getElementById("card-" + id);
+
+            if (!indicator || !label || !card) return;
+
+            indicator.classList.remove(
+                "is-ok",
+                "is-error",
+                "is-pending",
+                "is-waiting"
+            );
+
+            card.classList.remove("is-ok", "is-error", "is-waiting");
+
+            if (value === true) {
+                indicator.classList.add("is-ok");
+                indicator.textContent = "✓";
+                label.textContent = "Operacional";
+                card.classList.add("is-ok");
+            } else if (value === false) {
+                indicator.classList.add("is-error");
+                indicator.textContent = "!";
+                label.textContent = "Falha";
+                card.classList.add("is-error");
+            } else if (value === "waiting") {
+                indicator.classList.add("is-waiting");
+                indicator.textContent = "…";
+                label.textContent = "Aguardando dados recentes (~5 min)";
+                card.classList.add("is-waiting");
+            } else {
+                indicator.classList.add("is-pending");
+                indicator.textContent = "?";
+                label.textContent = "Sem informação";
+            }
+        }
+
+        function setAllUnavailable() {
+            statusFields.forEach(id => setIndicator(id, null));
+        }
+
+        function setMonitorState(message, warning = false) {
+            monitorLabel.textContent = message;
+            monitorState.classList.toggle("is-warning", warning);
+        }
+
         async function updateStatus() {
-            const response = await fetch('/status');
-            const status = await response.json();
-            
-            document.getElementById("sibionicsLogin").src = status.sibionicsLogin ? "./img/check.png" : "./img/wrong.png";
-            document.getElementById("nightscoutLastEntry").src = status.nightscoutLastEntry ? "./img/check.png" : "./img/wrong.png";
-            document.getElementById("sibionicsDevice").src = status.sibionicsDevice ? "./img/check.png" : "./img/wrong.png";
-            document.getElementById("sibionicsGlucose").src = status.sibionicsGlucose ? "./img/check.png" : "./img/wrong.png";
-            document.getElementById("nightscoutUpload").src = status.nightscoutUpload ? "./img/check.png" : "./img/wrong.png";
+            try {
+                const response = await fetch("/status", {
+                    cache: "no-store",
+                    credentials: "same-origin"
+                });
+
+                if (handleUnauthorized(response)) return false;
+
+                if (!response.ok) {
+                    throw new Error("Erro HTTP " + response.status);
+                }
+
+                const status = await response.json();
+
+                if (!status || typeof status !== "object") {
+                    throw new Error("Resposta de status inválida.");
+                }
+
+                statusFields.forEach(id => {
+                    setIndicator(id, status[id]);
+                });
+
+                const lastUploadLabel = document.getElementById("nightscoutLastUploadLabel");
+                if (lastUploadLabel) {
+                    const lastUploadAt = status.nightscoutLastUploadAt;
+                    const lastUploadDate = typeof lastUploadAt === "number"
+                        ? new Date(lastUploadAt)
+                        : null;
+                    const formattedLastUpload = lastUploadDate && !Number.isNaN(lastUploadDate.getTime())
+                        ? lastUploadDate.toLocaleString("pt-BR")
+                        : "Nunca";
+                    lastUploadLabel.textContent = "Último envio: " + formattedLastUpload;
+                }
+
+                return true;
+
+            } catch (error) {
+                console.error("Erro ao atualizar status:", error);
+                setAllUnavailable();
+                return false;
+            }
         }
 
         async function updateLogs() {
-            const response = await fetch('/logs');
-            const logs = await response.text();
-            const logContainer = document.getElementById("log-container");
-            logContainer.textContent = logs;
-            logContainer.scrollTop = logContainer.scrollHeight;
+            try {
+                const response = await fetch("/logs", {
+                    cache: "no-store",
+                    credentials: "same-origin"
+                });
+
+                if (handleUnauthorized(response)) return false;
+
+                if (!response.ok) {
+                    throw new Error("Erro HTTP " + response.status);
+                }
+
+                const logs = await response.text();
+
+                // Mantém a rolagem automática somente se o usuário
+                // já estiver próximo do final dos logs.
+                const distanceFromBottom =
+                    logContainer.scrollHeight -
+                    logContainer.scrollTop -
+                    logContainer.clientHeight;
+
+                const wasAtBottom = distanceFromBottom < 40;
+
+                logContainer.textContent = logs || "Nenhum log disponível.";
+                logContainer.classList.remove("is-error");
+
+                if (wasAtBottom) {
+                    logContainer.scrollTop = logContainer.scrollHeight;
+                }
+
+                return true;
+
+            } catch (error) {
+                console.error("Erro ao atualizar logs:", error);
+                logContainer.textContent =
+                    "Não foi possível carregar os logs. Verifique a conexão com o servidor.";
+                logContainer.classList.add("is-error");
+                return false;
+            }
         }
 
-        setInterval(() => {
-            updateStatus();
-            updateLogs();
-        }, 5000);
-        
-        window.onload = () => {
-            updateStatus();
-            updateLogs();
-        };
+        async function refreshAll() {
+            // Evita acumular requisições quando o servidor demora a responder.
+            if (refreshing) return;
+
+            refreshing = true;
+            setMonitorState("Atualizando...");
+
+            try {
+                const [statusOk, logsOk] = await Promise.all([
+                    updateStatus(),
+                    updateLogs()
+                ]);
+
+                if (statusOk && logsOk) {
+                    setMonitorState("Monitoramento ativo");
+                } else {
+                    setMonitorState("Falha em uma ou mais consultas", true);
+                }
+
+                lastUpdate.textContent =
+                    "Última atualização: " +
+                    new Date().toLocaleTimeString("pt-BR");
+
+            } finally {
+                refreshing = false;
+            }
+        }
+
+        async function logout() {
+            if (logoutButton.disabled) return;
+
+            logoutButton.disabled = true;
+            logoutButton.textContent = "Saindo...";
+
+            try {
+                const response = await fetch("/auth/logout", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    cache: "no-store"
+                });
+
+                if (handleUnauthorized(response)) return;
+
+                if (!response.ok) {
+                    throw new Error("Não foi possível encerrar a sessão.");
+                }
+
+                window.location.replace("/login");
+
+            } catch (error) {
+                console.error("Erro ao sair:", error);
+                alert("Não foi possível sair. Verifique sua conexão e tente novamente.");
+                logoutButton.disabled = false;
+                logoutButton.textContent = "Sair";
+            }
+        }
+
+        logoutButton.addEventListener("click", logout);
+
+        // Primeira consulta imediata.
+        refreshAll();
+
+        // Consultas posteriores a cada 5 segundos.
+        setInterval(refreshAll, 5000);
     </script>
-</head>
-<body>
-    <div class="container">
-        <h1>Status do Serviço</h1>
-        <ul class="status-list">
-            <li class="status-item">Login no Sibionics <img id="sibionicsLogin" class="status-icon" src="./img/wrong.png"></li>
-            <li class="status-item">Busca da última entrada no Nightscout <img id="nightscoutLastEntry" class="status-icon" src="./img/wrong.png"></li>
-            <li class="status-item">Busca dos dispositivos do Sibionics <img id="sibionicsDevice" class="status-icon" src="./img/wrong.png"></li>
-            <li class="status-item">Busca da glicemia no Sibionics <img id="sibionicsGlucose" class="status-icon" src="./img/wrong.png"></li>
-            <li class="status-item">Upload no Nightscout <img id="nightscoutUpload" class="status-icon" src="./img/wrong.png"></li>
-        </ul>
-        <h2>Últimos Logs:</h2>
-        <pre id="log-container">Carregando logs...</pre>
-    </div>
 </body>
 </html>

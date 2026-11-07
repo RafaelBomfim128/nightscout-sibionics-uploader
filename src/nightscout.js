@@ -65,6 +65,7 @@ module.exports = {
 
             utils.logger(`Upload de ${dataForUpload.length} entradas para o Nightscout com sucesso!`)
             status.updateStatus('nightscoutUpload', true);
+            status.updateStatus('nightscoutLastUploadAt', Date.now());
             return true;
         } catch (error) {
             utils.logger(`Erro ao fazer upload dos dados no Nightscout: ${error.message}`);

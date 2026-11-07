@@ -13,8 +13,8 @@ const contentType = 'application/json';
 const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36'
 
 module.exports = {
-    async login() {
-        if (lastAttemptLogin && (((Date.now() / 1000) - lastAttemptLogin / 1000) < 300)) {
+    async login(force = false) {
+        if (!force && lastAttemptLogin && (((Date.now() / 1000) - lastAttemptLogin / 1000) < 300)) {
             utils.logger('Última tentativa de login foi há menos de 5 minutos. Aguardando 5 minutos para tentar novamente.');
             status.updateStatus("sibionicsLogin", false);
             return false
@@ -79,15 +79,13 @@ module.exports = {
     },
 
     async getDevice(attempt = 0) {
-        if (attempt > 0) {
-            utils.logger('Número máximo de tentativas de buscar dispositivos no Sibionics excedido.');
-            status.updateStatus("sibionicsDevice", false);
-            return false
-        }
-
         if (!token) {
             utils.logger('Token de autenticação não encontrado.');
-            await this.login()
+            const loginSuccess = await this.login();
+            if (!loginSuccess) {
+                status.updateStatus("sibionicsDevice", false);
+                return false;
+            }
         }
 
         try {
@@ -99,9 +97,15 @@ module.exports = {
             });
 
             if (response.status === 200 && response.data.code === 401 && response.data.msg === 'Login state has expired') {
-                const loginSuccess = await this.login()
+                if (attempt >= 1) {
+                    utils.logger('A sessão do Sibionics expirou novamente após renovar o login.');
+                    status.updateStatus("sibionicsDevice", false);
+                    return false;
+                }
+
+                const loginSuccess = await this.login(true)
                 if (loginSuccess) {
-                    return await this.getDevice(attempt++)
+                    return await this.getDevice(attempt + 1)
                 } else {
                     status.updateStatus("sibionicsDevice", false);
                     return false
@@ -140,12 +144,6 @@ module.exports = {
     },
 
     async getGlucoseSibionics(lastEntryNightscout, attempt = 0) {
-        if (attempt > 0) {
-            utils.logger('Número máximo de tentativas de buscar dados de glicemia no Sibionics excedido.');
-            status.updateStatus("sibionicsGlucose", false);
-            return false
-        }
-
         if (!token || !deviceId) {
             utils.logger('Token de autenticação ou deviceId não encontrado.');
             status.updateStatus("sibionicsGlucose", false);
@@ -166,9 +164,15 @@ module.exports = {
             });
 
             if (response.status === 200 && response.data.code === 401 && response.data.msg === 'Login state has expired') {
-                const loginSuccess = await this.login()
+                if (attempt >= 1) {
+                    utils.logger('A sessão do Sibionics expirou novamente após renovar o login.');
+                    status.updateStatus("sibionicsGlucose", false);
+                    return false;
+                }
+
+                const loginSuccess = await this.login(true)
                 if (loginSuccess) {
-                    return await this.getGlucoseSibionics(lastEntryNightscout, attempt++)
+                    return await this.getGlucoseSibionics(lastEntryNightscout, attempt + 1)
                 } else {
                     status.updateStatus("sibionicsGlucose", false);
                     return false;
@@ -192,11 +196,9 @@ module.exports = {
             }
 
             if (response.data.data.glucoseInfos.length === 0) {
-                utils.logger('Erro ao buscar dados de glicemia: nenhum dado de glicemia encontrado no glucoseInfos.');
-                utils.logger('Resposta obtida:');
-                utils.logger(response.data);
-                status.updateStatus("sibionicsGlucose", false);
-                return false;
+                utils.logger('Nenhum dado de glicemia recente encontrado; aguardando a próxima leitura.');
+                status.updateStatus("sibionicsGlucose", true);
+                return [];
             }
 
             const glucoseInfos = response.data.data.glucoseInfos;
@@ -223,22 +225,19 @@ module.exports = {
 }
 
 function formatGlucoseData(data) {
-    if (data.length > 0) {
-        const formattedData = [];
-        data.forEach(element => {
-            const formatted = {
-                type: "sgv",
-                sgv: mmolToMgDl(element.v),
-                direction: directionTranslate(element.s),
-                device: 'nightscout-sibionics-uploader',
-                date: parseInt(element.t),
-                dateString: new Date(parseInt(element.t)).toISOString()
-            }
-            formattedData.push(formatted)
-        })
-        return formattedData
-    }
-    return null
+    const formattedData = [];
+    data.forEach(element => {
+        const formatted = {
+            type: "sgv",
+            sgv: mmolToMgDl(element.v),
+            direction: directionTranslate(element.s),
+            device: 'nightscout-sibionics-uploader',
+            date: parseInt(element.t),
+            dateString: new Date(parseInt(element.t)).toISOString()
+        }
+        formattedData.push(formatted)
+    })
+    return formattedData
 }
 
 function mmolToMgDl(mmol) {

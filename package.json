@@ -4,7 +4,8 @@
   "description": "Script to upload data from Nightscout to Sibionics (BR)",
   "main": "index.js",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "test": "node --test"
   },
   "keywords": [
     "nightscout",
